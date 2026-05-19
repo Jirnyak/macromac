@@ -23,7 +23,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          asset="dist/$(cat dist/archive-name.txt)"
           gh release create "$GITHUB_REF_NAME" \
-            dist/MacroMac-macos-universal.zip \
+            "$asset" \
             --title "MacroMac $GITHUB_REF_NAME" \
             --notes "Open-source JSON macro runner for macOS desktop automation. This build is unsigned and not notarized; macOS may require manual approval on first launch."

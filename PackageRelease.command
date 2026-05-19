@@ -2,12 +2,19 @@
 set -e
 
 cd "$(dirname "$0")"
-swift build -c release --arch arm64 --arch x86_64
 
-rm -rf dist/MacroMac dist/MacroMac-macos-universal.zip
+archive_name="MacroMac-macos-universal.zip"
+binary_path=".build/apple/Products/Release/macro"
+if ! swift build -c release --arch arm64 --arch x86_64; then
+  swift build -c release
+  archive_name="MacroMac-macos-$(uname -m).zip"
+  binary_path=".build/release/macro"
+fi
+
+rm -rf dist/MacroMac dist/MacroMac-macos-*.zip
 mkdir -p dist/MacroMac/macros
 
-cp .build/apple/Products/Release/macro dist/MacroMac/macro
+cp "$binary_path" dist/MacroMac/macro
 cp LICENSE dist/MacroMac/LICENSE
 cp README.md dist/MacroMac/README.md
 cp macros/example.json dist/MacroMac/macros/example.json
@@ -33,7 +40,8 @@ EOF
 
 chmod +x dist/MacroMac/macro dist/MacroMac/Macro.command dist/MacroMac/Example.command dist/MacroMac/Hotkeys.command
 
-(cd dist && zip -qry MacroMac-macos-universal.zip MacroMac)
+printf '%s\n' "$archive_name" > dist/archive-name.txt
+(cd dist && zip -qry "$archive_name" MacroMac)
 
 echo "Packaged: dist/MacroMac"
-echo "Archive: dist/MacroMac-macos-universal.zip"
+echo "Archive: dist/$archive_name"
