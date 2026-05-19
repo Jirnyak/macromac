@@ -35,7 +35,7 @@ enum KeyModifierRole: String {
 }
 
 enum KeyMap {
-    private static let definitions: [KeyDefinition] = [
+    static let definitions: [KeyDefinition] = [
         KeyDefinition(keyCode: 0, canonicalName: "a", aliases: [], displayName: "A", modifierRole: nil),
         KeyDefinition(keyCode: 1, canonicalName: "s", aliases: [], displayName: "S", modifierRole: nil),
         KeyDefinition(keyCode: 2, canonicalName: "d", aliases: [], displayName: "D", modifierRole: nil),
@@ -151,16 +151,7 @@ enum KeyMap {
     }
 
     static func code(_ name: StaticName) -> UInt16 {
-        switch name {
-        case .f1:
-            return 122
-        case .f2:
-            return 120
-        case .f3:
-            return 99
-        case .f4:
-            return 118
-        }
+        keyCode(named: name.rawValue)!
     }
 
     static let documentedNames: [String] = {
@@ -179,7 +170,7 @@ enum KeyMap {
 }
 
 extension KeyMap {
-    enum StaticName {
+    enum StaticName: String {
         case f1
         case f2
         case f3

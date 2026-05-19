@@ -3,6 +3,26 @@ import XCTest
 @testable import Macro
 
 final class KeyMapTests: XCTestCase {
+    func testCanonicalNamesAndAliasesDoNotCollideAcrossKeyCodes() {
+        var ownerByName: [String: UInt16] = [:]
+
+        for definition in KeyMap.definitions {
+            for name in [definition.canonicalName] + definition.aliases {
+                let normalized = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                if let existing = ownerByName[normalized] {
+                    XCTAssertEqual(existing, definition.keyCode, "Alias collision for \(name)")
+                } else {
+                    ownerByName[normalized] = definition.keyCode
+                }
+            }
+        }
+    }
+
+    func testDefinitionsHaveUniqueKeyCodes() {
+        let codes = KeyMap.definitions.map(\.keyCode)
+        XCTAssertEqual(Set(codes).count, codes.count)
+    }
+
     func testDocumentedNamesParseAndDisplay() throws {
         for name in KeyMap.documentedNames {
             let code = try XCTUnwrap(KeyMap.keyCode(named: name), name)
@@ -53,6 +73,93 @@ final class KeyMapTests: XCTestCase {
             XCTAssertEqual(KeyMap.keyCode(named: name), code, name)
             XCTAssertEqual(KeyMap.displayName(for: code), name)
         }
+    }
+
+    func testStaticControlKeyCodesResolveThroughKeyMap() {
+        XCTAssertEqual(KeyMap.code(.f1), KeyMap.keyCode(named: "F1"))
+        XCTAssertEqual(KeyMap.code(.f2), KeyMap.keyCode(named: "F2"))
+        XCTAssertEqual(KeyMap.code(.f3), KeyMap.keyCode(named: "F3"))
+        XCTAssertEqual(KeyMap.code(.f4), KeyMap.keyCode(named: "F4"))
+    }
+
+    func testControlKeyHardwarePathUsesConfiguredFKeyBindings() {
+        ControlKey.configure(.default)
+
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF1,
+                isPress: true
+            )?.command,
+            .record
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF2,
+                isPress: true
+            )?.command,
+            .cancelStep
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF3,
+                isPress: true
+            )?.command,
+            .playback
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF4,
+                isPress: true
+            )?.command,
+            .quit
+        )
+    }
+
+    func testControlKeyHardwarePathHonorsConfiguredControls() {
+        ControlKey.configure(ControlBindings(controls: MacroControls(
+            record: HotKey(key: "F2"),
+            cancelStep: HotKey(key: "F1"),
+            playback: HotKey(key: "F4"),
+            quit: HotKey(key: "F3")
+        )))
+        defer { ControlKey.configure(.default) }
+
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF1,
+                isPress: true
+            )?.command,
+            .cancelStep
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF2,
+                isPress: true
+            )?.command,
+            .record
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF3,
+                isPress: true
+            )?.command,
+            .quit
+        )
+        XCTAssertEqual(
+            ControlKey.controlEvent(
+                usagePage: ControlKey.usagePageKeyboard,
+                usage: ControlKey.keyboardF4,
+                isPress: true
+            )?.command,
+            .playback
+        )
     }
 
     func testModifierRoles() {
