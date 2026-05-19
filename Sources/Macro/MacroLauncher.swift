@@ -62,6 +62,7 @@ final class MacroLauncher: NSObject, NSWindowDelegate {
         addButton("Run", x: 336, y: 96, width: 76, action: #selector(runMacro))
         addButton("Open JSON", x: 24, y: 56, width: 112, action: #selector(openJSON))
         addButton("Refresh", x: 152, y: 56, width: 88, action: #selector(refreshMacrosAction))
+        addButton("Hotkeys", x: 256, y: 56, width: 92, action: #selector(runHotkeys))
         addButton("Quit", x: 420, y: 56, width: 76, action: #selector(quit))
 
         statusLabel.textColor = .secondaryLabelColor
@@ -106,6 +107,10 @@ final class MacroLauncher: NSObject, NSWindowDelegate {
             return
         }
         spawn(["--runner", "--play", "--macro", name])
+    }
+
+    @objc private func runHotkeys() {
+        spawn(["--hotkeys"])
     }
 
     @objc private func openJSON() {

@@ -1,5 +1,12 @@
 {
   "version": 3,
+  "hotkey": {
+    "key": "F8",
+    "modifiers": [
+      "control",
+      "option"
+    ]
+  },
   "sourceScreen": {
     "width": 1512,
     "height": 982

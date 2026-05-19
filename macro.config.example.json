@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "controls": {
+    "record": {
+      "key": "F1"
+    },
+    "cancelStep": {
+      "key": "F2"
+    },
+    "playback": {
+      "key": "F3"
+    },
+    "quit": {
+      "key": "F4"
+    }
+  }
+}

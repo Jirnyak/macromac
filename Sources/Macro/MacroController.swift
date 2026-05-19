@@ -2,6 +2,8 @@ import AppKit
 import CoreGraphics
 
 enum ControlKey {
+    private static var bindings = ControlBindings.default
+
     static let f1: UInt16 = 122
     static let f2: UInt16 = 120
     static let f3: UInt16 = 99
@@ -33,47 +35,74 @@ enum ControlKey {
     static let appleVendorTopCaseBrightnessUp = 0x04
     static let appleVendorTopCaseBrightnessDown = 0x05
 
+    static func configure(_ newBindings: ControlBindings) {
+        bindings = newBindings
+    }
+
     static func contains(_ keyCode: UInt16) -> Bool {
-        keyCode == f1 || keyCode == f2 || keyCode == f3 || keyCode == f4
+        bindings.contains(keyCode: keyCode)
+    }
+
+    static var editorHint: String {
+        "\(displayName(for: .record)) record   " +
+        "\(displayName(for: .cancelStep)) cancel step   " +
+        "\(displayName(for: .playback)) real run   " +
+        "\(displayName(for: .quit)) quit"
+    }
+
+    static func displayName(for command: ControlCommand) -> String {
+        bindings.hotkey(for: command).displayName
     }
 
     static func controlEvent(usagePage: Int, usage: Int, isPress: Bool) -> ControlEvent? {
-        let command: ControlCommand?
+        let keyCode: UInt16?
         switch (usagePage, usage) {
         case (usagePageKeyboard, keyboardF1):
-            command = .record
+            keyCode = f1
         case (usagePageKeyboard, keyboardF2):
-            command = .cancelStep
+            keyCode = f2
         case (usagePageKeyboard, keyboardF3):
-            command = .playback
+            keyCode = f3
         case (usagePageKeyboard, keyboardF4):
-            command = .quit
+            keyCode = f4
         case (usagePageConsumer, consumerBrightnessDown):
-            command = .record
+            keyCode = f1
         case (usagePageConsumer, consumerBrightnessUp):
-            command = .cancelStep
+            keyCode = f2
         case (usagePageConsumer, consumerSearch):
-            command = .quit
+            keyCode = f4
         case (usagePageAppleVendorKeyboard, brightnessDown):
-            command = .record
+            keyCode = f1
         case (usagePageAppleVendorKeyboard, brightnessUp):
-            command = .cancelStep
+            keyCode = f2
         case (usagePageAppleVendorKeyboard, missionControl), (usagePageAppleVendorKeyboard, exposeAll):
-            command = .playback
+            keyCode = f3
         case (usagePageAppleVendorKeyboard, launchPanel),
              (usagePageAppleVendorKeyboard, launchpad),
              (usagePageAppleVendorKeyboard, spotlight),
              (usagePageAppleVendorKeyboard, dashboard):
-            command = .quit
+            keyCode = f4
         case (usagePageAppleVendorTopCase, appleVendorTopCaseBrightnessDown):
-            command = .record
+            keyCode = f1
         case (usagePageAppleVendorTopCase, appleVendorTopCaseBrightnessUp):
-            command = .cancelStep
+            keyCode = f2
         default:
-            command = nil
+            keyCode = nil
         }
 
-        guard let command else {
+        guard let keyCode,
+              let command = bindings.command(forKeyCode: keyCode, modifiers: []) else {
+            return nil
+        }
+        return ControlEvent(command: command, isPress: isPress)
+    }
+
+    static func controlEvent(
+        keyCode: UInt16,
+        modifiers: NSEvent.ModifierFlags,
+        isPress: Bool
+    ) -> ControlEvent? {
+        guard let command = command(forKeyCode: keyCode, modifiers: modifiers) else {
             return nil
         }
         return ControlEvent(command: command, isPress: isPress)
@@ -83,10 +112,8 @@ enum ControlKey {
         switch type {
         case .keyDown, .keyUp:
             let keyCode = UInt16(cgEvent.getIntegerValueField(.keyboardEventKeycode))
-            guard let command = command(forKeyCode: keyCode) else {
-                return nil
-            }
-            return ControlEvent(command: command, isPress: type == .keyDown)
+            let modifiers = NSEvent.ModifierFlags(rawValue: UInt(cgEvent.flags.rawValue))
+            return controlEvent(keyCode: keyCode, modifiers: modifiers, isPress: type == .keyDown)
         default:
             guard type.rawValue == 14, let event = NSEvent(cgEvent: cgEvent) else {
                 return nil
@@ -94,7 +121,7 @@ enum ControlKey {
 
             if let pressState = systemPressState(for: event) {
                 let keyCode = UInt16(cgEvent.getIntegerValueField(.keyboardEventKeycode))
-                if let command = command(forKeyCode: keyCode) {
+                if let command = command(forKeyCode: keyCode, modifiers: event.modifierFlags) {
                     return ControlEvent(command: command, isPress: pressState)
                 }
             }
@@ -106,12 +133,12 @@ enum ControlKey {
     static func controlEvent(for event: NSEvent) -> ControlEvent? {
         switch event.type {
         case .keyDown:
-            guard let command = command(forKeyCode: event.keyCode) else {
+            guard let command = command(forKeyCode: event.keyCode, modifiers: event.modifierFlags) else {
                 return nil
             }
             return ControlEvent(command: command, isPress: true)
         case .keyUp:
-            guard let command = command(forKeyCode: event.keyCode) else {
+            guard let command = command(forKeyCode: event.keyCode, modifiers: event.modifierFlags) else {
                 return nil
             }
             return ControlEvent(command: command, isPress: false)
@@ -122,19 +149,11 @@ enum ControlKey {
         }
     }
 
-    private static func command(forKeyCode keyCode: UInt16) -> ControlCommand? {
-        switch keyCode {
-        case f1:
-            return .record
-        case f2:
-            return .cancelStep
-        case f3:
-            return .playback
-        case f4:
-            return .quit
-        default:
-            return nil
-        }
+    private static func command(
+        forKeyCode keyCode: UInt16,
+        modifiers: NSEvent.ModifierFlags
+    ) -> ControlCommand? {
+        bindings.command(forKeyCode: keyCode, modifiers: modifiers)
     }
 
     private static func systemControlEvent(for event: NSEvent) -> ControlEvent? {
@@ -144,18 +163,25 @@ enum ControlKey {
 
         let keyType = (event.data1 & 0xFFFF0000) >> 16
 
+        let keyCode: UInt16?
         switch keyType {
         case brightnessDown:
-            return ControlEvent(command: .record, isPress: isPress)
+            keyCode = f1
         case brightnessUp:
-            return ControlEvent(command: .cancelStep, isPress: isPress)
+            keyCode = f2
         case missionControl, exposeAll:
-            return ControlEvent(command: .playback, isPress: isPress)
+            keyCode = f3
         case launchPanel, launchpad, launchpadVendor, spotlight, dashboard:
-            return ControlEvent(command: .quit, isPress: isPress)
+            keyCode = f4
         default:
+            keyCode = nil
+        }
+
+        guard let keyCode,
+              let command = command(forKeyCode: keyCode, modifiers: event.modifierFlags) else {
             return nil
         }
+        return ControlEvent(command: command, isPress: isPress)
     }
 
     private static func systemPressState(for event: NSEvent) -> Bool? {
@@ -175,7 +201,7 @@ enum ControlKey {
     }
 }
 
-enum ControlCommand: Equatable {
+enum ControlCommand: String, CaseIterable, Codable, Equatable {
     case record
     case cancelStep
     case playback
@@ -229,12 +255,14 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         view.frame = CGRect(origin: .zero, size: frame.size)
         view.autoresizingMask = [.width, .height]
         view.controller = self
+        view.controlHint = ControlKey.editorHint
+        view.recordKeyName = recordKey
         window.contentView = view
 
         self.window = window
         view.message = rewriteStepsMode
-            ? "Rewrite steps mode. F1 rewrites existing steps; F3 runs; F4 quits."
-            : "Live overlay. F1 records new macro; F3 runs; F4 quits."
+            ? "Rewrite steps mode. \(recordKey) rewrites existing steps; \(playbackKey) runs; \(quitKey) quits."
+            : "Live overlay. \(recordKey) records new macro; \(playbackKey) runs; \(quitKey) quits."
         loadSavedMacroIfAvailable()
         showEditor()
     }
@@ -407,6 +435,22 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         window.orderFrontRegardless()
     }
 
+    private var recordKey: String {
+        ControlKey.displayName(for: .record)
+    }
+
+    private var cancelKey: String {
+        ControlKey.displayName(for: .cancelStep)
+    }
+
+    private var playbackKey: String {
+        ControlKey.displayName(for: .playback)
+    }
+
+    private var quitKey: String {
+        ControlKey.displayName(for: .quit)
+    }
+
     private func hideEditor() {
         window?.orderOut(nil)
     }
@@ -454,7 +498,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
                 return
             }
             guard rewriteStepOrdinal < document.stepCount else {
-                view.message = "All \(document.stepCount) step(s) already rewritten. F3 runs."
+                view.message = "All \(document.stepCount) step(s) already rewritten. \(playbackKey) runs."
                 return
             }
             recordingSessionStarted = true
@@ -474,8 +518,8 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         view.mode = .recording
         let stepNumber = rewriteStepsMode ? rewriteStepOrdinal + 1 : document.stepCount + 1
         view.message = rewriteStepsMode
-            ? "Rewriting step \(stepNumber)/\(document.stepCount). F1 saves replacement."
-            : "Recording step \(stepNumber). F1 saves; F2 cancels this step."
+            ? "Rewriting step \(stepNumber)/\(document.stepCount). \(recordKey) saves replacement."
+            : "Recording step \(stepNumber). \(recordKey) saves; \(cancelKey) cancels this step."
 
         if let point = view.cursorPoint {
             recordMove(to: point, force: true)
@@ -488,7 +532,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
             view.stepCount = document.stepCount
             view.mode = .idle
             let stepNumber = rewriteStepsMode ? rewriteStepOrdinal + 1 : document.stepCount + 1
-            view.message = "Empty step ignored. F1 records step \(stepNumber)."
+            view.message = "Empty step ignored. \(recordKey) records step \(stepNumber)."
             return
         }
 
@@ -504,15 +548,15 @@ final class MacroController: NSObject, MacroPlayerDelegate {
             }
             rewriteStepOrdinal += 1
             messagePrefix = rewriteStepOrdinal < document.stepCount
-                ? "Step \(stepNumber) rewritten. F1 rewrites step \(rewriteStepOrdinal + 1)."
-                : "Step \(stepNumber) rewritten. All steps done; F3 runs."
+                ? "Step \(stepNumber) rewritten. \(recordKey) rewrites step \(rewriteStepOrdinal + 1)."
+                : "Step \(stepNumber) rewritten. All steps done; \(playbackKey) runs."
         } else {
             stepNumber = document.stepCount + 1
             document.appendStep(MacroBlock.step(
                 name: "step \(stepNumber)",
                 actions: currentStepActions
             ))
-            messagePrefix = "Step \(stepNumber) saved. F1 records next; F3 runs."
+            messagePrefix = "Step \(stepNumber) saved. \(recordKey) records next; \(playbackKey) runs."
         }
         currentStepActions = []
         view.actions = document.actions
@@ -524,7 +568,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
     private func cancelCurrentStep() {
         guard isRecording else {
             let stepNumber = rewriteStepsMode ? rewriteStepOrdinal + 1 : document.stepCount + 1
-            view.message = "No active recording. F1 records step \(stepNumber)."
+            view.message = "No active recording. \(recordKey) records step \(stepNumber)."
             return
         }
 
@@ -535,7 +579,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         view.stepCount = document.stepCount
         view.mode = .idle
         let stepNumber = rewriteStepsMode ? rewriteStepOrdinal + 1 : document.stepCount + 1
-        view.message = "Step \(stepNumber) canceled. F1 records it again."
+        view.message = "Step \(stepNumber) canceled. \(recordKey) records it again."
     }
 
     private func recordMouseButton(
@@ -640,7 +684,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         }
 
         guard document.hasBlocks else {
-            view.message = "No macro blocks. Press F1 and record first step."
+            view.message = "No macro blocks. Press \(recordKey) and record first step."
             return
         }
 
@@ -652,7 +696,7 @@ final class MacroController: NSObject, MacroPlayerDelegate {
 
         saveCurrentMacro(messagePrefix: "Playback starts after editor hides.")
         view.mode = .playing
-        view.message = "Real playback running. Press F3/F4 to stop."
+        view.message = "Real playback running. Press \(playbackKey)/\(quitKey) to stop."
         hideEditor()
         player.start(document: document)
     }
@@ -677,8 +721,8 @@ final class MacroController: NSObject, MacroPlayerDelegate {
             view.stepCount = document.stepCount
             let baseMessage = view.message
             view.message = rewriteStepsMode
-                ? "\(baseMessage) Loaded \(document.blocks.count) block(s), \(document.stepCount) step(s). F1 rewrites step 1."
-                : "\(baseMessage) Loaded \(document.blocks.count) block(s), \(document.stepCount) step(s). F1 starts a new macro file."
+                ? "\(baseMessage) Loaded \(document.blocks.count) block(s), \(document.stepCount) step(s). \(recordKey) rewrites step 1."
+                : "\(baseMessage) Loaded \(document.blocks.count) block(s), \(document.stepCount) step(s). \(recordKey) starts a new macro file."
         } catch {
             view.message = "Load failed: \(error.localizedDescription)"
         }

@@ -198,6 +198,7 @@ struct MacroBlock: Codable {
 
 struct MacroDocument: Codable {
     var version: Int
+    var hotkey: HotKey?
     var sourceScreen: ScreenSize
     var loop: Bool
     var blocks: [MacroBlock]
@@ -206,6 +207,7 @@ struct MacroDocument: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case version
+        case hotkey
         case sourceScreen
         case loop
         case blocks
@@ -213,6 +215,7 @@ struct MacroDocument: Codable {
 
     init(sourceScreen: CGSize, blocks: [MacroBlock] = []) {
         version = 3
+        hotkey = nil
         self.sourceScreen = ScreenSize(sourceScreen)
         loop = true
         self.blocks = blocks.map { Self.normalizedBlock($0) }
@@ -259,6 +262,7 @@ struct MacroDocument: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decodeIfPresent(Int.self, forKey: .version) ?? 3
+        hotkey = try container.decodeIfPresent(HotKey.self, forKey: .hotkey)
         sourceScreen = try container.decodeIfPresent(ScreenSize.self, forKey: .sourceScreen)
             ?? ScreenSize(CGDisplayBounds(CGMainDisplayID()).size)
         loop = try container.decodeIfPresent(Bool.self, forKey: .loop) ?? true
@@ -269,6 +273,7 @@ struct MacroDocument: Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(version, forKey: .version)
+        try container.encodeIfPresent(hotkey, forKey: .hotkey)
         try container.encode(sourceScreen, forKey: .sourceScreen)
         try container.encode(loop, forKey: .loop)
         try container.encode(blocks, forKey: .blocks)

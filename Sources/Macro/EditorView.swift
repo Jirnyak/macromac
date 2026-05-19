@@ -29,6 +29,14 @@ final class EditorView: NSView {
         didSet { needsDisplay = true }
     }
 
+    var controlHint = "F1 record   F2 cancel step   F3 real run   F4 quit" {
+        didSet { needsDisplay = true }
+    }
+
+    var recordKeyName = "F1" {
+        didSet { needsDisplay = true }
+    }
+
     override var isFlipped: Bool {
         true
     }
@@ -333,7 +341,7 @@ final class EditorView: NSView {
         let keyCount = actions.filter { $0.kind == .keyDown }.count
         let text = """
         \(modeText)  steps \(stepCount)  actions \(actions.count)  clicks \(clickCount)  keys \(keyCount)
-        F1 record   F2 cancel step   F3 real run   F4 quit
+        \(controlHint)
         \(message)
         """
 
@@ -363,7 +371,7 @@ final class EditorView: NSView {
             color = .systemOrange
         }
 
-        let text = mode == .recording ? "F1 STOP" : modeText
+        let text = mode == .recording ? "\(recordKeyName) STOP" : modeText
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .bold),
             .foregroundColor: NSColor.white

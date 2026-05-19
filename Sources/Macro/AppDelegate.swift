@@ -5,6 +5,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: MacroController?
     private var runner: MacroRunner?
     private var launcher: MacroLauncher?
+    private var hotkeys: MacroHotkeyService?
     private var hardwareKeys: HardwareKeyMonitor?
     private var eventTap: CFMachPort?
     private var eventTapSource: CFRunLoopSource?
@@ -12,10 +13,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var runnerMode = false
     private var runnerAutoPlay = false
     private var editorMode = false
+    private var hotkeyMode = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        ControlKey.configure(MacroConfig.load().controlBindings)
+
         runnerMode = CommandLine.arguments.contains("--runner")
             || CommandLine.arguments.contains("--dialog")
+        hotkeyMode = CommandLine.arguments.contains("--hotkeys")
         editorMode = CommandLine.arguments.contains("--editor")
             || CommandLine.arguments.contains("--macro")
             || CommandLine.arguments.contains("--rewrite-steps")
@@ -26,7 +31,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             || CommandLine.arguments.contains("--dialog")
 
         installMenu()
-        if runnerMode {
+        if hotkeyMode {
+            let hotkeys = MacroHotkeyService()
+            self.hotkeys = hotkeys
+            hotkeys.start()
+            NSApp.setActivationPolicy(.accessory)
+        } else if runnerMode {
             runner = MacroRunner()
             NSApp.setActivationPolicy(.accessory)
         } else if editorMode {
@@ -60,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             CFMachPortInvalidate(eventTap)
         }
         hardwareKeys?.stop()
+        hotkeys?.stop()
         runner?.stop()
         controller?.cleanup()
     }
@@ -82,6 +93,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleHIDUsage(page: Int, usage: Int, isPress: Bool) {
+        if hotkeyMode {
+            guard let event = ControlKey.controlEvent(usagePage: page, usage: usage, isPress: isPress),
+                  event.isPress else {
+                return
+            }
+            hotkeys?.handleControl(event.command)
+            return
+        }
+
         if runnerMode {
             guard let event = ControlKey.controlEvent(usagePage: page, usage: usage, isPress: isPress) else {
                 return
@@ -97,6 +117,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleGlobalKey(_ event: NSEvent) {
+        if hotkeyMode {
+            hotkeys?.handle(event)
+            return
+        }
+
         if runnerMode {
             guard let controlEvent = ControlKey.controlEvent(for: event), controlEvent.isPress else {
                 return
@@ -109,6 +134,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleHardwareControlEvent(_ event: CGEvent, type: CGEventType) -> Bool {
+        if hotkeyMode {
+            return hotkeys?.handle(event, type: type) ?? false
+        }
+
         if runnerMode {
             if let controlEvent = ControlKey.controlEvent(for: event, type: type) {
                 if controlEvent.isPress {

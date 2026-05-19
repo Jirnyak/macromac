@@ -1,4 +1,4 @@
-# Macro
+# MacroMac
 
 Native macOS macro recorder and JSON runner for automating real desktop workflows.
 
@@ -20,7 +20,8 @@ Experimental macOS tooling for personal automation, prototyping, and script-driv
 - Stores workflows as plain JSON in `blocks`.
 - Supports fixed delays, shell commands, file-change signals, and shell polling conditions.
 - Discards human recording time; playback timing is controlled by `pace`.
-- Runs in a headless runner mode.
+- Runs in headless runner and hotkey supervisor modes.
+- Lets each macro define its own launch hotkey.
 
 ## What It Is Not
 
@@ -78,6 +79,7 @@ This opens the native launcher. From there:
 - `Edit Steps` rewrites only the existing `step` blocks in a selected macro.
 - `Run` starts the selected macro in runner mode.
 - `Open JSON` opens the selected macro file in your default editor.
+- `Hotkeys` starts the background supervisor for macros with top-level `hotkey`.
 
 The launcher reads `./macros/*.json` relative to the current working directory.
 
@@ -87,6 +89,7 @@ The repository includes simple double-click launchers:
 
 - `Macro.command` - opens the launcher.
 - `Example.command` - runs the safe example macro from `macros/example.json`.
+- `Hotkeys.command` - starts the background hotkey supervisor.
 
 These are plain shell scripts. macOS may require confirmation the first time you open them.
 
@@ -105,7 +108,9 @@ This creates `dist/Macro/` with:
 - `macro` - release executable.
 - `Macro.command` - opens the launcher using the bundled executable.
 - `Example.command` - runs the bundled example macro.
+- `Hotkeys.command` - starts the bundled hotkey supervisor.
 - `macros/example.json` - safe sample macro.
+- `macro.config.example.json` - optional controls template.
 
 The target Mac still needs compatible macOS permissions for Accessibility and Input Monitoring. For public distribution outside your own machines, code signing and notarization are recommended to avoid Gatekeeper warnings.
 
@@ -124,6 +129,36 @@ In runner mode:
 - `F4` - quit.
 
 Top-row function keys are fragile on macOS. Depending on keyboard settings and hardware, brightness/Mission Control/Launchpad keys may map to the same physical keys. Input Monitoring permission may be required for reliable handling.
+
+Editor and runner controls can be changed in `macro.config.json`:
+
+```json
+{
+  "version": 1,
+  "controls": {
+    "record": { "key": "F1" },
+    "cancelStep": { "key": "F2" },
+    "playback": { "key": "F3" },
+    "quit": { "key": "F4" }
+  }
+}
+```
+
+If `macro.config.json` is missing, these defaults are used. `macro.config.example.json` is committed as a template; `macro.config.json` is local and ignored by git.
+
+Hotkeys use:
+
+```json
+{ "key": "F8", "modifiers": ["control", "option"] }
+```
+
+or a raw macOS virtual key code:
+
+```json
+{ "keyCode": 100, "modifiers": ["control", "option"] }
+```
+
+Supported named keys include `F1` through `F20`, `A` through `Z`, `0` through `9`, `space`, `tab`, `return`, and `escape`. Supported modifiers are `command`, `control`, `option`, `shift`, and `function`.
 
 ## Modes
 
@@ -163,6 +198,16 @@ Run immediately:
 swift run macro -- --runner --play --macro my-flow.json
 ```
 
+Start the hotkey supervisor:
+
+```sh
+swift run macro -- --hotkeys
+```
+
+In this mode MacroMac scans `./macros/*.json`, loads every macro with a top-level `hotkey`, and keeps running in the background. Pressing a macro hotkey starts that macro. Pressing the same hotkey again stops it. Pressing another macro hotkey stops the current macro and starts the new one.
+
+Restart the supervisor after adding, removing, or changing macro `hotkey` fields.
+
 Local shortcut mode:
 
 ```sh
@@ -188,6 +233,10 @@ A macro is a flat ordered list of `blocks`.
 ```json
 {
   "version": 3,
+  "hotkey": {
+    "key": "F8",
+    "modifiers": ["control", "option"]
+  },
   "sourceScreen": { "width": 1512, "height": 982 },
   "loop": true,
   "blocks": [
@@ -210,6 +259,8 @@ A macro is a flat ordered list of `blocks`.
 ```
 
 If `loop` is `true`, playback returns to block `0` after the final block. A pause before the next cycle should be modeled as the final `delay`.
+
+`hotkey` is optional. It is used only by `--hotkeys`; normal editor and runner modes ignore it.
 
 ## Blocks
 
@@ -271,6 +322,18 @@ Macro snapshots file existence, size, and modification time on entry. It continu
 date +%s%N > signal.txt
 ```
 
+## Repeat And Handoff
+
+MacroMac does not need separate `repeat`, `pause`, or "cyborg mode" blocks.
+
+- Repeat the whole macro with top-level `"loop": true`.
+- Pause between cycles with a final `delay`.
+- Pause for a human, agent, or another process with `signal`.
+- Wait for a real condition with `condition`.
+- Let external logic branch, count, or decide with `command` and files.
+
+This keeps the core language flat: `step -> command/condition/signal/delay -> step`.
+
 ## Input Actions
 
 Supported `action.kind` values inside a `step`:
@@ -307,6 +370,7 @@ Normal recording happens over the real desktop. The overlay ignores mouse events
 - No built-in image recognition or OCR.
 - No automatic recovery if a window, dialog, or loading state changes.
 - No per-action recorded timing.
+- Hotkey events are listen-only; choose shortcuts that do not conflict with the active app.
 - Runner errors currently go to system logs / Terminal output, not a rich run report.
 - Shell commands are trusted code.
 - macOS permissions can silently break capture or playback if not granted.
@@ -321,6 +385,7 @@ This repository ignores generated and personal files:
 - `.DS_Store`
 - `*.log`
 - `Dialog.command`
+- `macro.config.json`
 - `tmp/`
 - `macros/*.json` except `macros/example.json`
 
@@ -350,6 +415,12 @@ Run a macro immediately:
 
 ```sh
 swift run macro -- --runner --play --macro my-flow.json
+```
+
+Run the hotkey supervisor:
+
+```sh
+swift run macro -- --hotkeys
 ```
 
 ## Non-goals

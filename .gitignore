@@ -3,6 +3,7 @@
 Dialog.command
 ./Dialog.command
 *.local.command
+macro.config.json
 
 .build/
 .swiftpm/
