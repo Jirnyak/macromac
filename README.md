@@ -14,6 +14,28 @@ It is intentionally low-level. MacroMac does not understand UI semantics, recove
 
 Experimental macOS tooling for personal automation, prototyping, and script-driven desktop workflows.
 
+## Why It Exists
+
+Most automation tools choose one world:
+
+- app-specific APIs, accessibility trees, or browser automation, which can be robust but require a matching integration;
+- consumer macro recorders, which are convenient but opaque and hard to generate or edit as data;
+- scripts and local agents, which are programmable but cannot always press real GUI controls.
+
+MacroMac is the narrow bridge:
+
+```text
+real GUI input -> editable JSON -> shell/file synchronization -> headless replay
+```
+
+This is the macro-as-code paradigm: record the physical workflow once, then inspect, edit, generate, version, and run it like any other local program.
+
+MacroMac's original value is this small contract: physical desktop input becomes editable data, and external programs can synchronize with it through simple file and shell handoff points.
+
+That shape is useful for GUI-only workflows: games, legacy apps, chat clients, installers, local tools, and sites where API access is unavailable, unwanted, or slower than using the screen.
+
+The goal is not smarter automation inside the core. The goal is honest low-level automation: record real input, expose it as plain data, and let external tools provide intelligence through files, shell commands, `condition`, or `signal`.
+
 ## What It Does
 
 - Opens a native macOS launcher for choosing, editing, and running macro JSON files.
@@ -31,6 +53,7 @@ Experimental macOS tooling for personal automation, prototyping, and script-driv
 - Not OCR.
 - Not accessibility-tree automation.
 - Not browser automation like Selenium or Playwright.
+- Not a full RPA platform.
 - Not an API replacement when a stable API exists.
 - Not resilient to arbitrary app layout changes.
 - Not safe to run with untrusted JSON.
