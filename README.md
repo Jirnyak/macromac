@@ -168,7 +168,7 @@ or a raw macOS virtual key code:
 { "keyCode": 100, "modifiers": ["control", "option"] }
 ```
 
-Supported named keys include `F1` through `F20`, `A` through `Z`, `0` through `9`, `space`, `tab`, `return`, and `escape`. Supported modifiers are `command`, `control`, `option`, `shift`, and `function`.
+Supported named keys include `F1` through `F20`, `A` through `Z`, `0` through `9`, `space`, `tab`, `return`, `escape`, `delete`, `left`, `right`, `up`, and `down`. Supported modifiers are `command`, `control`, `option`, `shift`, and `function`.
 
 ## Modes
 
@@ -407,6 +407,12 @@ Build:
 
 ```sh
 swift build
+```
+
+Test:
+
+```sh
+swift test
 ```
 
 Run launcher:

@@ -11,6 +11,10 @@ let package = Package(
         .executable(name: "macro", targets: ["Macro"])
     ],
     targets: [
-        .executableTarget(name: "Macro")
+        .executableTarget(name: "Macro"),
+        .testTarget(
+            name: "MacroTests",
+            dependencies: ["Macro"]
+        )
     ]
 )

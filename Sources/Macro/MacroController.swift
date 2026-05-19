@@ -4,10 +4,6 @@ import CoreGraphics
 enum ControlKey {
     private static var bindings = ControlBindings.default
 
-    static let f1: UInt16 = 122
-    static let f2: UInt16 = 120
-    static let f3: UInt16 = 99
-    static let f4: UInt16 = 118
     static let systemEventSubtype: Int16 = 8
     static let systemKeyDown = 0x0A
     static let systemKeyUp = 0x0B
@@ -58,34 +54,34 @@ enum ControlKey {
         let keyCode: UInt16?
         switch (usagePage, usage) {
         case (usagePageKeyboard, keyboardF1):
-            keyCode = f1
+            keyCode = KeyMap.code(.f1)
         case (usagePageKeyboard, keyboardF2):
-            keyCode = f2
+            keyCode = KeyMap.code(.f2)
         case (usagePageKeyboard, keyboardF3):
-            keyCode = f3
+            keyCode = KeyMap.code(.f3)
         case (usagePageKeyboard, keyboardF4):
-            keyCode = f4
+            keyCode = KeyMap.code(.f4)
         case (usagePageConsumer, consumerBrightnessDown):
-            keyCode = f1
+            keyCode = KeyMap.code(.f1)
         case (usagePageConsumer, consumerBrightnessUp):
-            keyCode = f2
+            keyCode = KeyMap.code(.f2)
         case (usagePageConsumer, consumerSearch):
-            keyCode = f4
+            keyCode = KeyMap.code(.f4)
         case (usagePageAppleVendorKeyboard, brightnessDown):
-            keyCode = f1
+            keyCode = KeyMap.code(.f1)
         case (usagePageAppleVendorKeyboard, brightnessUp):
-            keyCode = f2
+            keyCode = KeyMap.code(.f2)
         case (usagePageAppleVendorKeyboard, missionControl), (usagePageAppleVendorKeyboard, exposeAll):
-            keyCode = f3
+            keyCode = KeyMap.code(.f3)
         case (usagePageAppleVendorKeyboard, launchPanel),
              (usagePageAppleVendorKeyboard, launchpad),
              (usagePageAppleVendorKeyboard, spotlight),
              (usagePageAppleVendorKeyboard, dashboard):
-            keyCode = f4
+            keyCode = KeyMap.code(.f4)
         case (usagePageAppleVendorTopCase, appleVendorTopCaseBrightnessDown):
-            keyCode = f1
+            keyCode = KeyMap.code(.f1)
         case (usagePageAppleVendorTopCase, appleVendorTopCaseBrightnessUp):
-            keyCode = f2
+            keyCode = KeyMap.code(.f2)
         default:
             keyCode = nil
         }
@@ -166,13 +162,13 @@ enum ControlKey {
         let keyCode: UInt16?
         switch keyType {
         case brightnessDown:
-            keyCode = f1
+            keyCode = KeyMap.code(.f1)
         case brightnessUp:
-            keyCode = f2
+            keyCode = KeyMap.code(.f2)
         case missionControl, exposeAll:
-            keyCode = f3
+            keyCode = KeyMap.code(.f3)
         case launchPanel, launchpad, launchpadVendor, spotlight, dashboard:
-            keyCode = f4
+            keyCode = KeyMap.code(.f4)
         default:
             keyCode = nil
         }
@@ -755,24 +751,10 @@ final class MacroController: NSObject, MacroPlayerDelegate {
         keyCode: UInt16,
         flags: NSEvent.ModifierFlags
     ) -> MacroActionKind? {
-        let isDown: Bool
-        switch keyCode {
-        case 56, 60:
-            isDown = flags.contains(.shift)
-        case 59, 62:
-            isDown = flags.contains(.control)
-        case 58, 61:
-            isDown = flags.contains(.option)
-        case 54, 55:
-            isDown = flags.contains(.command)
-        case 57:
-            isDown = flags.contains(.capsLock)
-        case 63:
-            isDown = flags.contains(.function)
-        default:
+        guard let role = KeyMap.modifierRole(for: keyCode) else {
             return nil
         }
 
-        return isDown ? .keyDown : .keyUp
+        return flags.contains(role.flag) ? .keyDown : .keyUp
     }
 }
