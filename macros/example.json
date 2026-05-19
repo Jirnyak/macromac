@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "sourceScreen": {
+    "width": 1512,
+    "height": 982
+  },
+  "loop": false,
+  "blocks": [
+    {
+      "kind": "step",
+      "name": "move to center",
+      "pace": 0.1,
+      "actions": [
+        {
+          "kind": "move",
+          "x": 0.5,
+          "y": 0.5
+        }
+      ]
+    },
+    {
+      "kind": "condition",
+      "command": "mkdir -p tmp && touch tmp/ready.txt && test -f tmp/ready.txt",
+      "poll": 1,
+      "timeout": 10
+    },
+    {
+      "kind": "command",
+      "command": "mkdir -p tmp && printf 'macro example complete\\n' > tmp/output.txt",
+      "timeout": 10
+    }
+  ]
+}
