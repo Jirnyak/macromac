@@ -1,12 +1,14 @@
 # MacroMac
 
-Native macOS macro recorder and JSON runner for automating real desktop workflows.
+Open-source JSON macro runner for macOS desktop automation.
 
-Macro records mouse and keyboard input over live applications, stores it as editable JSON, and replays it with simple synchronization blocks: delays, shell commands, file signals, and polling conditions.
+![MacroMac demo](assets/demo.gif)
+
+MacroMac records mouse and keyboard input over live applications, stores it as editable JSON, and replays it with simple synchronization blocks: delays, shell commands, file signals, and polling conditions.
 
 It is universal in the low-level sense: it does not need app-specific APIs, browser extensions, or per-site integrations. If a workflow can be driven by mouse, keyboard, files, and shell commands, Macro can usually represent it.
 
-It is not foolproof. Macro does not understand UI semantics, recover from changed layouts, or know whether the correct window is focused.
+It is intentionally low-level. MacroMac does not understand UI semantics, recover from changed layouts, or know whether the correct window is focused.
 
 ## Status
 
@@ -43,6 +45,14 @@ Install command line tools if needed:
 ```sh
 xcode-select --install
 ```
+
+## Download
+
+For normal use, download the built `MacroMac-macos-universal.zip` asset from GitHub Releases, unzip it, and open `Macro.command`.
+
+The GitHub-generated "Source code" archives are not ready-to-run app builds. Use the attached release zip.
+
+The release build is a universal macOS binary for Apple Silicon and Intel Macs. It is unsigned and not notarized, so macOS may require manual approval on first launch.
 
 ## Security And Privacy
 
@@ -103,7 +113,7 @@ To create a folder that can be copied to another Mac without installing Swift th
 ./PackageRelease.command
 ```
 
-This creates `dist/Macro/` with:
+This creates `dist/MacroMac/` and `dist/MacroMac-macos-universal.zip` with:
 
 - `macro` - release executable.
 - `Macro.command` - opens the launcher using the bundled executable.
@@ -422,6 +432,16 @@ Run the hotkey supervisor:
 ```sh
 swift run macro -- --hotkeys
 ```
+
+Regenerate the README demo GIF:
+
+```sh
+./scripts/render-demo-gif.command
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
 
 ## Non-goals
 
