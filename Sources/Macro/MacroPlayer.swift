@@ -8,6 +8,12 @@ protocol MacroPlayerDelegate: AnyObject {
 }
 
 final class MacroPlayer {
+    private struct RepeatFrame {
+        var blocks: [MacroBlock]
+        var index: Int
+        var remaining: Int
+    }
+
     weak var delegate: MacroPlayerDelegate?
 
     private var timer: Timer?
@@ -19,6 +25,7 @@ final class MacroPlayer {
     private var blockIndex = 0
     private var actionIndex = 0
     private var emittedLoops = 0
+    private var repeatStack: [RepeatFrame] = []
     private var blockIsRunning = false
     private var waitSignalSnapshot: SignalSnapshot?
     private var nextPoll = 0.0
@@ -44,6 +51,7 @@ final class MacroPlayer {
         blockIndex = 0
         actionIndex = 0
         emittedLoops = 0
+        repeatStack.removeAll(keepingCapacity: true)
         resetBlockState()
         leftButtonIsDown = false
         rightButtonIsDown = false
@@ -65,6 +73,7 @@ final class MacroPlayer {
         document = nil
         blockIndex = 0
         actionIndex = 0
+        repeatStack.removeAll(keepingCapacity: true)
         resetBlockState()
         if notify {
             delegate?.macroPlayerDidStop(loopCount: emittedLoops)
@@ -82,20 +91,11 @@ final class MacroPlayer {
             return
         }
 
-        guard blockIndex < document.blocks.count else {
-            guard document.loop else {
-                emittedLoops = max(emittedLoops, 1)
-                stop()
-                return
-            }
-
-            emittedLoops += 1
-            blockIndex = 0
-            resetBlockState()
+        guard let block = activeBlock(in: document) else {
             return
         }
 
-        run(document.blocks[blockIndex], now: now)
+        run(block, now: now)
     }
 
     private func run(_ block: MacroBlock, now: Double) {
@@ -110,6 +110,8 @@ final class MacroPlayer {
             runCondition(block, now: now)
         case .command:
             runCommand(block, now: now)
+        case .repeatBlock:
+            runRepeat(block)
         }
     }
 
@@ -236,6 +238,18 @@ final class MacroPlayer {
         startProcess(block)
     }
 
+    private func runRepeat(_ block: MacroBlock) {
+        let count = max(block.count ?? 1, 0)
+        let blocks = block.blocks ?? []
+        guard count > 0, !blocks.isEmpty else {
+            finishBlock()
+            return
+        }
+
+        repeatStack.append(RepeatFrame(blocks: blocks, index: 0, remaining: count))
+        resetBlockState()
+    }
+
     private func startProcess(_ block: MacroBlock) {
         guard let command = block.command, !command.isEmpty else {
             fail("empty command block")
@@ -268,9 +282,49 @@ final class MacroPlayer {
     }
 
     private func finishBlock() {
-        blockIndex += 1
+        if repeatStack.isEmpty {
+            blockIndex += 1
+        } else {
+            repeatStack[repeatStack.count - 1].index += 1
+        }
         actionIndex = 0
         resetBlockState()
+    }
+
+    private func activeBlock(in document: MacroDocument) -> MacroBlock? {
+        while true {
+            if !repeatStack.isEmpty {
+                let frameIndex = repeatStack.count - 1
+                if repeatStack[frameIndex].index < repeatStack[frameIndex].blocks.count {
+                    return repeatStack[frameIndex].blocks[repeatStack[frameIndex].index]
+                }
+
+                if repeatStack[frameIndex].remaining > 1 {
+                    repeatStack[frameIndex].remaining -= 1
+                    repeatStack[frameIndex].index = 0
+                    resetBlockState()
+                    continue
+                }
+
+                repeatStack.removeLast()
+                finishBlock()
+                continue
+            }
+
+            if blockIndex < document.blocks.count {
+                return document.blocks[blockIndex]
+            }
+
+            guard document.loop else {
+                emittedLoops = max(emittedLoops, 1)
+                stop()
+                return nil
+            }
+
+            emittedLoops += 1
+            blockIndex = 0
+            resetBlockState()
+        }
     }
 
     private func resetBlockState() {

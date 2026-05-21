@@ -29,6 +29,7 @@ enum MacroBlockKind: String, Codable {
     case signal
     case condition
     case command
+    case repeatBlock = "repeat"
 }
 
 struct MacroAction: Codable {
@@ -95,7 +96,9 @@ struct MacroBlock: Codable {
     var poll: Double? = nil
     var pace: Double? = nil
     var compactMoves: Bool? = nil
+    var count: Int? = nil
     var actions: [MacroAction]? = nil
+    var blocks: [MacroBlock]? = nil
 
     private enum CodingKeys: String, CodingKey {
         case kind
@@ -109,7 +112,9 @@ struct MacroBlock: Codable {
         case poll
         case pace
         case compactMoves
+        case count
         case actions
+        case blocks
     }
 
     static func step(name: String, actions: [MacroAction]) -> MacroBlock {
@@ -132,6 +137,9 @@ struct MacroBlock: Codable {
             return stepDuration
         case .signal, .condition, .command:
             return 0
+        case .repeatBlock:
+            let childSeconds = blocks?.reduce(0) { $0 + $1.nominalSeconds } ?? 0
+            return Double(max(count ?? 1, 0)) * childSeconds
         }
     }
 
@@ -147,7 +155,9 @@ struct MacroBlock: Codable {
         poll: Double? = nil,
         pace: Double? = nil,
         compactMoves: Bool? = nil,
-        actions: [MacroAction]? = nil
+        count: Int? = nil,
+        actions: [MacroAction]? = nil,
+        blocks: [MacroBlock]? = nil
     ) {
         self.kind = kind
         self.name = name
@@ -160,7 +170,9 @@ struct MacroBlock: Codable {
         self.poll = poll
         self.pace = pace
         self.compactMoves = compactMoves
+        self.count = count
         self.actions = actions
+        self.blocks = blocks
     }
 
     init(from decoder: Decoder) throws {
@@ -176,7 +188,9 @@ struct MacroBlock: Codable {
         poll = try container.decodeIfPresent(Double.self, forKey: .poll)
         pace = try container.decodeIfPresent(Double.self, forKey: .pace)
         compactMoves = try container.decodeIfPresent(Bool.self, forKey: .compactMoves)
+        count = try container.decodeIfPresent(Int.self, forKey: .count)
         actions = try container.decodeIfPresent([MacroAction].self, forKey: .actions)
+        blocks = try container.decodeIfPresent([MacroBlock].self, forKey: .blocks)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -192,7 +206,9 @@ struct MacroBlock: Codable {
         try container.encodeIfPresent(poll, forKey: .poll)
         try container.encodeIfPresent(pace, forKey: .pace)
         try container.encodeIfPresent(compactMoves, forKey: .compactMoves)
+        try container.encodeIfPresent(count, forKey: .count)
         try container.encodeIfPresent(actions, forKey: .actions)
+        try container.encodeIfPresent(blocks, forKey: .blocks)
     }
 }
 
@@ -222,7 +238,7 @@ struct MacroDocument: Codable {
     }
 
     var stepCount: Int {
-        blocks.filter { $0.kind == .step }.count
+        blocks.reduce(0) { $0 + Self.stepCount(in: $1) }
     }
 
     var hasBlocks: Bool {
@@ -230,7 +246,7 @@ struct MacroDocument: Codable {
     }
 
     var actions: [MacroAction] {
-        blocks.flatMap { $0.kind == .step ? ($0.actions ?? []) : [] }
+        blocks.flatMap(Self.actions(in:))
     }
 
     mutating func appendStep(_ step: MacroBlock) {
@@ -238,25 +254,8 @@ struct MacroDocument: Codable {
     }
 
     mutating func replaceStep(at ordinal: Int, actions: [MacroAction]) -> Bool {
-        guard let blockIndex = stepBlockIndex(ordinal: ordinal) else {
-            return false
-        }
-
-        var block = blocks[blockIndex]
-        block.actions = actions
-        blocks[blockIndex] = Self.normalizedBlock(block)
-        return true
-    }
-
-    private func stepBlockIndex(ordinal: Int) -> Int? {
         var current = 0
-        for index in blocks.indices where blocks[index].kind == .step {
-            if current == ordinal {
-                return index
-            }
-            current += 1
-        }
-        return nil
+        return Self.replaceStep(in: &blocks, ordinal: ordinal, current: &current, actions: actions)
     }
 
     init(from decoder: Decoder) throws {
@@ -280,6 +279,13 @@ struct MacroDocument: Codable {
     }
 
     private static func normalizedBlock(_ block: MacroBlock) -> MacroBlock {
+        if block.kind == .repeatBlock {
+            var next = block
+            next.count = max(next.count ?? 1, 0)
+            next.blocks = (next.blocks ?? []).map(normalizedBlock)
+            return next
+        }
+
         guard block.kind == .step else {
             return block
         }
@@ -300,6 +306,57 @@ struct MacroDocument: Codable {
 
         next.actions = actions
         return next
+    }
+
+    private static func stepCount(in block: MacroBlock) -> Int {
+        switch block.kind {
+        case .step:
+            return 1
+        case .repeatBlock:
+            return block.blocks?.reduce(0) { $0 + stepCount(in: $1) } ?? 0
+        case .delay, .signal, .condition, .command:
+            return 0
+        }
+    }
+
+    private static func actions(in block: MacroBlock) -> [MacroAction] {
+        switch block.kind {
+        case .step:
+            return block.actions ?? []
+        case .repeatBlock:
+            return block.blocks?.flatMap(actions(in:)) ?? []
+        case .delay, .signal, .condition, .command:
+            return []
+        }
+    }
+
+    private static func replaceStep(
+        in blocks: inout [MacroBlock],
+        ordinal: Int,
+        current: inout Int,
+        actions: [MacroAction]
+    ) -> Bool {
+        for index in blocks.indices {
+            switch blocks[index].kind {
+            case .step:
+                if current == ordinal {
+                    blocks[index].actions = actions
+                    blocks[index] = normalizedBlock(blocks[index])
+                    return true
+                }
+                current += 1
+            case .repeatBlock:
+                var childBlocks = blocks[index].blocks ?? []
+                if replaceStep(in: &childBlocks, ordinal: ordinal, current: &current, actions: actions) {
+                    blocks[index].blocks = childBlocks
+                    blocks[index] = normalizedBlock(blocks[index])
+                    return true
+                }
+            case .delay, .signal, .condition, .command:
+                break
+            }
+        }
+        return false
     }
 
     private static func compactedMoves(_ actions: [MacroAction]) -> [MacroAction] {

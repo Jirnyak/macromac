@@ -261,7 +261,7 @@ The editor records input order, not human timing. If you pause while thinking du
 
 ## JSON Model
 
-A macro is a flat ordered list of `blocks`.
+A macro is an ordered top-level list of `blocks`. Most blocks are single actions in that list; `repeat` contains its own ordered `blocks` list for a fixed local loop.
 
 ```json
 {
@@ -286,7 +286,15 @@ A macro is a flat ordered list of `blocks`.
     },
     { "kind": "condition", "command": "test -f ready.txt", "poll": 1, "timeout": 60 },
     { "kind": "command", "command": "cp ready.txt output.txt", "timeout": 10 },
-    { "kind": "delay", "seconds": 1 }
+    { "kind": "delay", "seconds": 1 },
+    {
+      "kind": "repeat",
+      "count": 3,
+      "blocks": [
+        { "kind": "command", "command": "date >> ticks.log", "timeout": 10 },
+        { "kind": "delay", "seconds": 0.5 }
+      ]
+    }
   ]
 }
 ```
@@ -355,17 +363,58 @@ Macro snapshots file existence, size, and modification time on entry. It continu
 date +%s%N > signal.txt
 ```
 
+### `repeat`
+
+Repeat one block or a sequence of blocks a fixed number of times:
+
+```json
+{
+  "kind": "repeat",
+  "count": 5,
+  "blocks": [
+    {
+      "kind": "step",
+      "name": "click item",
+      "pace": 0.15,
+      "actions": [
+        { "kind": "leftClick", "x": 0.5, "y": 0.5 }
+      ]
+    },
+    { "kind": "delay", "seconds": 0.25 }
+  ]
+}
+```
+
+`count` is the number of local passes. `blocks` can contain any normal block, including another `repeat`. If `count` is `0`, the block is skipped. Missing `count` is treated as `1`.
+
 ## Repeat And Handoff
 
-MacroMac does not need separate `repeat`, `pause`, or "cyborg mode" blocks.
+There are two built-in repeat forms:
 
-- Repeat the whole macro with top-level `"loop": true`.
-- Pause between cycles with a final `delay`.
-- Pause for a human, agent, or another process with `signal`.
-- Wait for a real condition with `condition`.
-- Let external logic branch, count, or decide with `command` and files.
+- Repeat the whole macro forever with top-level `"loop": true`.
+- Repeat a local block sequence N times with a `repeat` block.
 
-This keeps the core language flat: `step -> command/condition/signal/delay -> step`.
+Example: run a recorded step, wait, and do that pair four times without looping the whole macro:
+
+```json
+{
+  "kind": "repeat",
+  "count": 4,
+  "blocks": [
+    {
+      "kind": "step",
+      "name": "submit once",
+      "pace": 0.2,
+      "actions": [
+        { "kind": "leftClick", "x": 0.5, "y": 0.5 }
+      ]
+    },
+    { "kind": "condition", "command": "test -f ready-for-next.txt", "poll": 1, "timeout": 60 }
+  ]
+}
+```
+
+Use a final `delay` to pause between whole-macro cycles. Use `signal` or `condition` when a human, agent, app, or file-producing process decides when to continue. Use `command` and files for dynamic branching or counters that are more complex than fixed `count`.
 
 ## Input Actions
 
