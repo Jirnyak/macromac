@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/cyber_banner.jpg" width="100%" alt="MacroMac Banner"/>
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/banner_macromac.jpg" width="100%" alt="MacroMac Banner"/>
 
 # 🍎 MacroMac — JSON Macro Runner for macOS Desktop Automation
 
