@@ -13,6 +13,20 @@
 </div>
 
 ---
+---
+
+## 📸 Authentic Repository Media & Screenshots Gallery
+
+<p align="center"><i>Showing 1 verified screenshot(s) and visual assets directly from the repository source tree:</i></p>
+
+<div align="center">
+
+<a href="assets/demo.gif"><img src="assets/demo.gif" width="96%" alt="demo"/></a>
+<br/>
+
+</div>
+
+------
 
 ## 📖 Executive Architectural Overview
 
