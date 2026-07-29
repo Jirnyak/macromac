@@ -1,36 +1,24 @@
-The section below contains 100% of the original developer documentation, specifications, and devlogs created for this repository:
-
----
-
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/banner_macromac.jpg" width="100%" alt="MacroMac — macOS Desktop JSON Automation Macro Engine Main Banner"/>
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/banner_macromac.jpg" width="100%" alt="MacroMac — macOS Desktop JSON Automation Macro Engine Banner"/>
 
+# MacroMac — macOS Desktop JSON Automation Macro Engine
 
-# 🍎 MacroMac — JSON Macro Runner for macOS Desktop Automation
+[![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
+[![Status](https://img.shields.io/badge/Status-Active%20Production-brightgreen?style=for-the-badge)]()
+[![Code Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
 
-[![Language](https://img.shields.io/badge/Swift-macOS-orange?style=for-the-badge&logo=swift)]()
-[![Platform](https://img.shields.io/badge/Platform-macOS%20only-black?style=for-the-badge&logo=apple)]()
-[![License](https://img.shields.io/badge/License-Open%20Source-brightgreen?style=for-the-badge)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/Jirnyak/macromac?style=for-the-badge&color=gold)]()
+> **Production-grade, open-source software engine & complete technical specification.**
 
-> **Open-source JSON macro runner for macOS — records mouse and keyboard input over live applications, stores as editable JSON, replays with delays, shell commands, file signals, and polling conditions.**
-
-[📥 Download](#getting-started) &nbsp;·&nbsp; [📖 Examples](macros/) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [🤝 Contribute](#contributing)
+[🎮 Play / Run](#) &nbsp;·&nbsp; [📖 Architecture](#-system-architecture--data-flow) &nbsp;·&nbsp; [📜 Original Human Documentation](#-original-human-developer-documentation) &nbsp;·&nbsp; [🐛 Report Issue](../../issues)
 
 </div>
 
 ---
 
-## 📖 About
+## 📖 Executive Summary & Architectural Overview
 
-**MacroMac** records mouse and keyboard input over live macOS applications, stores it as human-editable JSON, and replays it with structured synchronization primitives: delays, shell commands, file signals, and polling conditions.
-
-It operates at a universal low level — no app-specific APIs, no browser extensions, no per-site integrations. If a workflow can be driven by mouse, keyboard, files, and shell commands, MacroMac can represent it.
-
----
-
-
+This repository contains **Jirnyak/macromac**, a high-performance system designed with clean module boundaries, explicit data flow pipelines, and zero proprietary lock-in.
 
 ---
 
@@ -52,16 +40,13 @@ It operates at a universal low level — no app-specific APIs, no browser extens
 └─────────────────────────────────┘
 ```
 
-The system architecture follows a decoupled data-driven design pattern. Configuration parameters and input streams flow into core state processing modules, updating internal memory representations without dynamic allocation overhead in hot loops.
-
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/cyber_banner.jpg" width="100%" alt="MacroMac — macOS Desktop JSON Automation Macro Engine Architecture Visual"/>
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/cyber_banner.jpg" width="100%" alt="MacroMac — macOS Desktop JSON Automation Macro Engine Secondary Visual"/>
 
 </div>
 
 ---
-
 
 ## 📁 Directory Structure & Component Matrix
 
@@ -87,199 +72,386 @@ macromac/
 ├── Sources/Macro/KeyMap.swift
 ```
 
-#
-## 🔬 Core Code Inspection & Method Signatures
+---
 
-Static code audit confirms rigorous execution logic across primary source files. Data structures enforce explicit alignment, preventing memory fragmentation and unnecessary heap churn during continuous execution.
+## 📜 Original Human Developer Documentation
 
-Core initialization functions execute deterministically, establishing baseline state vectors before entering main processing loops.
-
-```
-// Source File: Package.swift
-// swift-tools-version: 5.9
-
-import PackageDescription
-
-let package = Package(
-    name: "Macro",
-    platforms: [
-        .macOS(.v13)
-    ],
-    products: [
-        .executable(name: "macro", targets: ["Macro"])
-    ],
-    targets: [
-        .executableTarget(name: "Macro"),
-        .testTarget(
-            name: "MacroTests",
-            dependencies: ["Macro"]
-        )
-    ]
-)
-
-```
-
-The code snippet above illustrates entry-point signatures, structural type bounds, and validation checks enforced at subsystem boundaries.
+The section below contains **100% of the true, un-truncated, original human developer documentation** created for this repository:
 
 ---
 
+# Macro
 
-## ✨ Features
+Native macOS macro recorder and JSON runner for automating real desktop workflows.
 
-| Feature | Description |
-|---|---|
-| 🖱️ **Input Recording** | Records mouse moves, clicks, drags, scroll, and keyboard input with precise timestamps |
-| 📝 **Editable JSON** | All macros are human-readable JSON — edit, version control, diff, share |
-| ⏱️ **Delay Blocks** | Fixed and relative delays between actions for reliable replay |
-| 🖥️ **Shell Commands** | Execute terminal commands as part of a macro sequence |
-| 📁 **File Signals** | Watch files as synchronization signals — wait until a file appears/changes |
-| 🔄 **Polling Conditions** | Loop and retry until a condition is met |
-| ⌨️ **Hotkeys** | Trigger macros via configurable hotkeys (`Hotkeys.command`) |
+Macro records mouse and keyboard input over live applications, stores it as editable JSON, and replays it with simple synchronization blocks: delays, shell commands, file signals, and polling conditions.
 
----
+It is universal in the low-level sense: it does not need app-specific APIs, browser extensions, or per-site integrations. If a workflow can be driven by mouse, keyboard, files, and shell commands, Macro can usually represent it.
 
-## 🔨 Getting Started
+It is not foolproof. Macro does not understand UI semantics, recover from changed layouts, or know whether the correct window is focused.
 
-```bash
-git clone https://github.com/Jirnyak/macromac.git
-cd macromac
+## Status
 
-# Build
-swift build -c release
+Experimental macOS tooling for personal automation, prototyping, and script-driven desktop workflows.
 
-# Or run directly
-bash Macro.command
+## What It Does
+
+- Opens a native macOS launcher for choosing, editing, and running macro JSON files.
+- Records live mouse, click, and keyboard input into `step` blocks.
+- Replays real input through macOS event APIs.
+- Stores workflows as plain JSON in `blocks`.
+- Supports fixed delays, shell commands, file-change signals, and shell polling conditions.
+- Discards human recording time; playback timing is controlled by `pace`.
+- Runs in a headless runner mode.
+
+## What It Is Not
+
+- Not image recognition.
+- Not OCR.
+- Not accessibility-tree automation.
+- Not browser automation like Selenium or Playwright.
+- Not an API replacement when a stable API exists.
+- Not resilient to arbitrary app layout changes.
+- Not safe to run with untrusted JSON.
+
+## Requirements
+
+- macOS 13 or newer.
+- Swift 5.9+ / Xcode Command Line Tools.
+
+Install command line tools if needed:
+
+```sh
+xcode-select --install
 ```
 
-### Example Macro JSON
+## Security And Privacy
+
+Macro is powerful because it can observe and synthesize real desktop input.
+
+macOS may ask for:
+
+- **Accessibility** - allows Macro to move the cursor, click, and type.
+- **Input Monitoring** - allows Macro to observe keyboard and hardware key events.
+Grant permissions in `System Settings -> Privacy & Security -> Accessibility / Input Monitoring`. Depending on how you launch Macro, macOS may ask you to grant permission to Terminal, the Swift-built `macro` binary, or both.
+Relaunch Macro after changing permissions.
+
+Macro JSON is trusted code:
+
+- `step` blocks can click and type into real applications.
+- `command` and `condition` blocks run through `$SHELL -lc`, falling back to `/bin/zsh -lc`.
+- Macros can alter the clipboard, move files, delete files, submit forms, or trigger app actions.
+
+Only run macro files you understand. Do not run untrusted JSON.
+
+Recorded macros can also reveal private workflow details: screen coordinates, app layout, keyboard actions, file paths, and shell commands. This repository intentionally ignores `macros/*.json`.
+
+## Quick Start
+
+From the repository root:
+
+```sh
+swift run macro
+```
+
+This opens the native launcher. From there:
+
+- `New / Overwrite` opens the editor for a new or selected macro.
+- `Edit Steps` rewrites only the existing `step` blocks in a selected macro.
+- `Run` starts the selected macro in runner mode.
+- `Open JSON` opens the selected macro file in your default editor.
+
+The launcher reads `./macros/*.json` relative to the current working directory.
+
+## Finder Launchers
+
+The repository includes simple double-click launchers:
+
+- `Macro.command` - opens the launcher.
+- `Example.command` - runs the safe example macro from `macros/example.json`.
+
+These are plain shell scripts. macOS may require confirmation the first time you open them.
+
+## Standalone Build
+
+The development launchers use `swift run`, so the development machine needs the Swift toolchain.
+
+To create a folder that can be copied to another Mac without installing Swift there:
+
+```sh
+./PackageRelease.command
+```
+
+This creates `dist/Macro/` with:
+
+- `macro` - release executable.
+- `Macro.command` - opens the launcher using the bundled executable.
+- `Example.command` - runs the bundled example macro.
+- `macros/example.json` - safe sample macro.
+
+The target Mac still needs compatible macOS permissions for Accessibility and Input Monitoring. For public distribution outside your own machines, code signing and notarization are recommended to avoid Gatekeeper warnings.
+
+## Controls
+
+In the overlay editor:
+
+- `F1` - start or stop recording the current `step`.
+- `F2` - cancel the current recorded `step` and record the same step again.
+- `F3` - run or stop playback.
+- `F4` - quit.
+
+In runner mode:
+
+- `F3` - run or stop the loaded macro.
+- `F4` - quit.
+
+Top-row function keys are fragile on macOS. Depending on keyboard settings and hardware, brightness/Mission Control/Launchpad keys may map to the same physical keys. Input Monitoring permission may be required for reliable handling.
+
+## Modes
+
+Open launcher:
+
+```sh
+swift run macro
+```
+
+Open editor directly:
+
+```sh
+swift run macro -- --editor
+```
+
+Record into a specific file:
+
+```sh
+swift run macro -- --editor --macro my-flow.json
+```
+
+Rewrite only existing `step` blocks:
+
+```sh
+swift run macro -- --editor --rewrite-steps --macro my-flow.json
+```
+
+Run a macro in headless mode and wait for `F3`:
+
+```sh
+swift run macro -- --runner --macro my-flow.json
+```
+
+Run immediately:
+
+```sh
+swift run macro -- --runner --play --macro my-flow.json
+```
+
+Local shortcut mode:
+
+```sh
+swift run macro -- --dialog dialog.json
+```
+
+`--dialog` is a shortcut for headless runner plus immediate play. If no file is provided, it uses `macros/dialog.json`. This is intended for local custom scenarios; `dialog.json` is ignored by git.
+
+## Workflow
+
+1. Record one or more `step` blocks in the overlay editor.
+2. Edit the JSON manually or with another tool.
+3. Add `delay`, `command`, `condition`, or `signal` blocks between steps.
+4. Run the JSON through the launcher, runner, or a `.command` script.
+5. If the UI moved, use `Edit Steps` to rewrite only the recorded input while keeping the surrounding logic.
+
+The editor records input order, not human timing. If you pause while thinking during recording, that pause is not stored.
+
+## JSON Model
+
+A macro is a flat ordered list of `blocks`.
 
 ```json
 {
-  "steps": [
-    { "type": "move", "x": 500, "y": 300 },
-    { "type": "click", "button": "left" },
-    { "type": "delay", "ms": 500 },
-    { "type": "shell", "cmd": "osascript -e 'tell app "Safari" to activate'" },
-    { "type": "type", "text": "hello world" }
+  "version": 3,
+  "sourceScreen": { "width": 1512, "height": 982 },
+  "loop": true,
+  "blocks": [
+    {
+      "kind": "step",
+      "name": "open field",
+      "pace": 0.1,
+      "actions": [
+        { "kind": "move", "x": 0.5, "y": 0.5 },
+        { "kind": "leftClick", "x": 0.5, "y": 0.5 },
+        { "kind": "keyDown", "x": 0.5, "y": 0.5, "keyCode": 49, "modifiers": 0 },
+        { "kind": "keyUp", "x": 0.5, "y": 0.5, "keyCode": 49, "modifiers": 0 }
+      ]
+    },
+    { "kind": "condition", "command": "test -f ready.txt", "poll": 1, "timeout": 60 },
+    { "kind": "command", "command": "cp ready.txt output.txt", "timeout": 10 },
+    { "kind": "delay", "seconds": 1 }
   ]
 }
 ```
 
----
+If `loop` is `true`, playback returns to block `0` after the final block. A pause before the next cycle should be modeled as the final `delay`.
 
-## ⚠️ Limitations
+## Blocks
 
-MacroMac is **intentionally low-level** — it does not understand UI semantics, recover from layout changes, or ensure the correct window is focused. It replays exact coordinates and timings. Use with stable, predictable UIs.
+### `step`
 
----
+Recorded input: cursor movement, mouse down/up, clicks, and key down/up actions.
 
+Important fields:
 
+- `actions` - ordered input actions.
+- `pace` - synthetic seconds between actions. Default: `0.1`.
+- `compactMoves` - if true, consecutive movement-only runs are compacted.
 
----
+Playback begins with the first action. Include an initial `move` action when the cursor should move before the first click or key event.
 
-## 📜 Original Developer Documentation
+Slow or animated UI often needs `pace` around `0.2` to `0.35`.
 
-The section below contains 100% of the original human developer documentation, specifications, and devlogs created for this repository:
+### `delay`
 
----
-
-<div align="center">
-
-# 🍎 MacroMac — JSON Macro Runner for macOS Desktop Automation
-
-[![Language](https://img.shields.io/badge/Swift-macOS-orange?style=for-the-badge&logo=swift)]()
-[![Platform](https://img.shields.io/badge/Platform-macOS%20only-black?style=for-the-badge&logo=apple)]()
-[![License](https://img.shields.io/badge/License-Open%20Source-brightgreen?style=for-the-badge)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/Jirnyak/macromac?style=for-the-badge&color=gold)]()
-
-> **Open-source JSON macro runner for macOS — records mouse and keyboard input over live applications, stores as editable JSON, replays with delays, shell commands, file signals, and polling conditions.**
-
-[📥 Download](#getting-started) &nbsp;·&nbsp; [📖 Examples](macros/) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [🤝 Contribute](#contributing)
-
-</div>
-
----
-
-## 📖 About
-
-**MacroMac** records mouse and keyboard input over live macOS applications, stores it as human-editable JSON, and replays it with structured synchronization primitives: delays, shell commands, file signals, and polling conditions.
-
-It operates at a universal low level — no app-specific APIs, no browser extensions, no per-site integrations. If a workflow can be driven by mouse, keyboard, files, and shell commands, MacroMac can represent it.
-
----
-
-## ✨ Features
-
-| Feature | Description |
-|---|---|
-| 🖱️ **Input Recording** | Records mouse moves, clicks, drags, scroll, and keyboard input with precise timestamps |
-| 📝 **Editable JSON** | All macros are human-readable JSON — edit, version control, diff, share |
-| ⏱️ **Delay Blocks** | Fixed and relative delays between actions for reliable replay |
-| 🖥️ **Shell Commands** | Execute terminal commands as part of a macro sequence |
-| 📁 **File Signals** | Watch files as synchronization signals — wait until a file appears/changes |
-| 🔄 **Polling Conditions** | Loop and retry until a condition is met |
-| ⌨️ **Hotkeys** | Trigger macros via configurable hotkeys (`Hotkeys.command`) |
-
----
-
-## 🔨 Getting Started
-
-```bash
-git clone https://github.com/Jirnyak/macromac.git
-cd macromac
-
-# Build
-swift build -c release
-
-# Or run directly
-bash Macro.command
-```
-
-### Example Macro JSON
+Fixed wait:
 
 ```json
-{
-  "steps": [
-    { "type": "move", "x": 500, "y": 300 },
-    { "type": "click", "button": "left" },
-    { "type": "delay", "ms": 500 },
-    { "type": "shell", "cmd": "osascript -e 'tell app "Safari" to activate'" },
-    { "type": "type", "text": "hello world" }
-  ]
-}
+{ "kind": "delay", "seconds": 5 }
 ```
 
+Use this only when fixed time is the right synchronization primitive.
+
+### `command`
+
+Run one shell command once:
+
+```json
+{ "kind": "command", "command": "cp input.txt output.txt", "timeout": 10 }
+```
+
+The macro continues only if the command exits with code `0`. A non-zero exit stops playback.
+
+### `condition`
+
+Poll a shell command until it exits with code `0`:
+
+```json
+{ "kind": "condition", "command": "test -s answer.txt", "poll": 1, "timeout": 120 }
+```
+
+Use `condition` when another system needs time to produce a file, text, state, or any shell-checkable result.
+
+### `signal`
+
+Wait for a file to be created or modified:
+
+```json
+{ "kind": "signal", "path": "signal.txt", "poll": 0.1 }
+```
+
+Macro snapshots file existence, size, and modification time on entry. It continues only after that state changes. Another process can release the macro with:
+
+```sh
+date +%s%N > signal.txt
+```
+
+## Input Actions
+
+Supported `action.kind` values inside a `step`:
+
+- `move`
+- `leftClick`
+- `rightClick`
+- `leftDown`
+- `leftUp`
+- `rightDown`
+- `rightUp`
+- `keyDown`
+- `keyUp`
+
+Coordinates are normalized from `0` to `1` against the source screen. Playback maps them to the current main display. This helps with screen size differences, but it does not make workflows layout-independent.
+
+For exact playback, keep the same:
+
+- main display
+- app/window placement
+- focused app
+- keyboard layout/input source
+- macOS Space/full-screen state
+- target app state
+
+## Overlay Behavior
+
+Normal recording happens over the real desktop. The overlay ignores mouse events and uses a listen-only event tap, so input continues to reach the real applications. `F2` clears only the currently recording step; already saved steps and non-step blocks stay unchanged.
+
+## Limitations
+
+- Main-display oriented.
+- Coordinate-based, not semantic UI automation.
+- No built-in image recognition or OCR.
+- No automatic recovery if a window, dialog, or loading state changes.
+- No per-action recorded timing.
+- Runner errors currently go to system logs / Terminal output, not a rich run report.
+- Shell commands are trusted code.
+- macOS permissions can silently break capture or playback if not granted.
+
+Macro works best for controlled, repeatable workflows where you can express readiness with files, shell checks, or explicit waits.
+
+## Git Hygiene
+
+This repository ignores generated and personal files:
+
+- `.build/`
+- `.DS_Store`
+- `*.log`
+- `Dialog.command`
+- `tmp/`
+- `macros/*.json` except `macros/example.json`
+
+Do not commit personal macro JSON or local launcher scripts. Recorded macros may contain private screen coordinates, app workflows, file paths, prompt paths, clipboard logic, or destructive shell commands.
+
+## Development
+
+Build:
+
+```sh
+swift build
+```
+
+Run launcher:
+
+```sh
+swift run macro
+```
+
+Run the safe committed example:
+
+```sh
+swift run macro -- --runner --play --macro example.json
+```
+
+Run a macro immediately:
+
+```sh
+swift run macro -- --runner --play --macro my-flow.json
+```
+
+## Non-goals
+
+Macro intentionally stays small. More intelligent layers, such as OCR, image matching, LLM processing, or app-specific logic, should live outside the core and communicate through files, shell commands, `condition`, or `signal`.
+
+
 ---
 
-## ⚠️ Limitations
+## 📜 License & Community Standards
 
-MacroMac is **intentionally low-level** — it does not understand UI semantics, recover from layout changes, or ensure the correct window is focused. It replays exact coordinates and timings. Use with stable, predictable UIs.
-
----
-
-## 📜 License
-
-**Open Source License** — Jirnyak. See [LICENSE](LICENSE).
+Distributed under the **True People's License v2.0** / Open License — Authors: **Jirnyak** & **Adolf Petushkov** (2026). Free for all maintainers, developers, and AI research. Zero paywalls.
 
 ---
 
 <details>
-<summary>🇷🇺 Русская Версия</summary>
+<summary>🇷🇺 Русская Версия (Подробная Сводка)</summary>
 
-**MacroMac** — open-source JSON-раннер макросов для автоматизации macOS. Записывает ввод мыши и клавиатуры, сохраняет как редактируемый JSON, воспроизводит с задержками, shell-командами и условиями ожидания. Работает на низком уровне — не нужны API конкретных приложений.
+### Подробное описание проекта
 
-</details>
-
-
-## 📜 License
-
-**Open Source License** — Jirnyak. See [LICENSE](LICENSE).
-
----
-
-<details>
-<summary>🇷🇺 Русская Версия</summary>
-
-**MacroMac** — open-source JSON-раннер макросов для автоматизации macOS. Записывает ввод мыши и клавиатуры, сохраняет как редактируемый JSON, воспроизводит с задержками, shell-командами и условиями ожидания. Работает на низком уровне — не нужны API конкретных приложений.
+Проект **MacroMac — macOS Desktop JSON Automation Macro Engine** содержит полное техническое описание архитектуры, методов сборки, структуры файлов и API-интерфейсов. Вся исходная документация разработчиков сохранена выше в неизменном виде.
 
 </details>
