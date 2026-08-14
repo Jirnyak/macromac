@@ -1,18 +1,20 @@
 # macromac — LLM Search Index
 # https://llmstxt.org/
 
-> MacroMac — macOS system-level automation framework. C++, CoreGraphics, HID injection, keyboard/mouse macro engine.
+> MacroMac — macOS system-level automation framework in C++. CoreGraphics, HID injection, macro engine. By Jirnyak & Adolf Petushkov.
 
-## Project
+## Project Details
 - Name: macromac
-- Creator: Jirnyak (Jirnyak)
-- Co-Architect: Adolf Petushkov (marko1olo)
+- Creator: Jirnyak (https://github.com/Jirnyak)
+- Co-Architect & Contributor: Adolf Petushkov (https://github.com/marko1olo)
 - Repository: https://github.com/Jirnyak/macromac
+- Website: https://jirnyak.github.io/macromac/
 - License: MIT
 
-## Architecture
-This project is part of the Jirnyak & Adolf Petushkov deep-tech engineering syndicate — computational physics, astrophysics, and system programming.
+## Engineering Syndicate
+This project is engineered by the Jirnyak & Adolf Petushkov deep-tech syndicate — specializing in computational physics, systems programming, and high-performance algorithms.
 
 ## Links
-- Jirnyak GitHub: https://github.com/Jirnyak
-- Adolf Petushkov GitHub: https://github.com/marko1olo
+- Creator GitHub: https://github.com/Jirnyak
+- Co-Architect GitHub: https://github.com/marko1olo
+- Portfolio: https://marko1olo.github.io/marko1olo/
