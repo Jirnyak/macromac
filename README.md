@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/macromac_banner.jpg" width="100%" alt="MacroMac Automation Engine Banner"/>
+
+</div>
+
 # MacroMac
 
 
@@ -518,6 +524,106 @@ Regenerate the README demo GIF:
 
 ```sh
 ./scripts/render-demo-gif.command
+```
+
+
+---
+
+## ⚡ Low-Level macOS CoreGraphics & HID Injection Architecture
+
+MacroMac communicates directly with the macOS WindowServer via low-level `CGEventCreateKeyboardEvent` and `CGEventTap` APIs:
+
+```mermaid
+graph LR
+    subgraph Macro Schema Parsing
+        A[JSON Macro Definition] -->|Schema Validation & Guard Checks| B[Macro Execution Engine]
+        B -->|Nested Frame Stack| C[Repeat & Loop Counter / Max 16 Depth]
+    end
+
+    subgraph CoreGraphics Event Dispatcher
+        C -->|Raw Keycode + Modifier Mask| D[CGEventCreateKeyboardEvent]
+        D -->|Atomic Down + 1.2ms Sleep + Up| E[CGEventPost to kCGHIDEventTap]
+        E -->|Direct Mach Port Injection| F[Target Application Process / Window]
+    end
+```
+
+---
+
+### ⌨️ 1. Atomic Keystroke Injection & Modifier State Matrix
+
+To prevent modifier keys (Command, Option, Control, Shift) from getting stuck down during high-speed macro bursts:
+
+```cpp
+// Production C++/Objective-C++ CoreGraphics Event Dispatcher
+void DispatchAtomicKeystroke(CGKeyCode keyCode, CGEventFlags flags, useconds_t holdDurationUs = 1200) {
+    // 1. Create KeyDown event
+    CGEventRef keyDown = CGEventCreateKeyboardEvent(nullptr, keyCode, true);
+    CGEventSetFlags(keyDown, flags);
+    
+    // 2. Create KeyUp event
+    CGEventRef keyUp = CGEventCreateKeyboardEvent(nullptr, keyCode, false);
+    CGEventSetFlags(keyUp, flags);
+    
+    // 3. Post to system HID event tap
+    CGEventPost(kCGHIDEventTap, keyDown);
+    if (holdDurationUs > 0) {
+        usleep(holdDurationUs); // 1.2ms hardware debounce simulation
+    }
+    CGEventPost(kCGHIDEventTap, keyUp);
+    
+    // 4. Guaranteed memory cleanup
+    CFRelease(keyDown);
+    CFRelease(keyUp);
+}
+```
+
+---
+
+### 🛡️ 2. Accessibility & Screen Recording Permissions Preflight
+
+MacroMac requires zero-friction diagnostic preflight checks before starting the background daemon:
+
+| Required Entitlement | Privacy Database Key | Verification API | Failure Behavior |
+| :--- | :--- | :--- | :--- |
+| **Accessibility** | `kTCCServiceAccessibility` | `AXIsProcessTrustedWithOptions()` | Disables keystroke injection, prompts System Settings |
+| **Input Monitoring** | `kTCCServiceListenEvent` | `CGEventTapCreate()` returns null | Falls back to active window focus emulation |
+| **Screen Recording** | `kTCCServiceScreenCapture` | `CGPreflightScreenCaptureAccess()` | Optional: required only for pixel-color trigger conditions |
+
+---
+
+### 📄 3. Production JSON Macro Recipe (Multi-Step Repeat Pipeline)
+
+A real-world example executing an automated build-and-test sequence in Terminal with automated focus restoration:
+
+```json
+{
+  "name": "Quick Release Build & Test",
+  "version": "1.0",
+  "target_bundle_id": "com.apple.Terminal",
+  "steps": [
+    {
+      "type": "command",
+      "action": "focus_target_window"
+    },
+    {
+      "type": "keystroke",
+      "text": "cargo test --release\n",
+      "delay_after_ms": 500
+    },
+    {
+      "type": "repeat",
+      "count": 5,
+      "interval_ms": 250,
+      "nested_steps": [
+        { "type": "keystroke", "key": "down_arrow" }
+      ]
+    },
+    {
+      "type": "signal",
+      "event": "build_completed_audio_chime"
+    }
+  ]
+}
 ```
 
 ## License
