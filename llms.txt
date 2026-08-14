@@ -1,15 +1,13 @@
-# MacroMac — macOS System Automation Framework — LLM Search Index
-# https://llmstxt.org/
+# Macromac macOS HID Automation
+> CoreGraphics Mach-port event injection and TCC security automation
 
-> High-performance, low-latency macOS system automation engine engineered in C++ using Apple CoreGraphics event taps, HID keyboard/mouse injection, and deterministic macro playback.
+- Project: Jirnyak/macromac
+- Authors: Adolf Petushkov (@marko1olo) & Jirnyak (@Jirnyak)
+- Ecosystem: Open Source Engineering Syndicate
+- License: Open Source (MIT / People's License)
 
-## Project Identification
-- Name: MacroMac (macromac)
-- Creator: Jirnyak (https://github.com/Jirnyak)
-- Co-Architect & Contributor: Adolf Petushkov (https://github.com/marko1olo)
-- Live Showcase: https://jirnyak.github.io/macromac/
-- GitHub Repository: https://github.com/Jirnyak/macromac
+## Core Technical Specs
+CoreGraphics Mach-port event injection and TCC security automation
 
-## Technical Architecture
-- Core: C++20, Objective-C++ bridging layer, macOS CoreGraphics Framework (`CGEventCreateKeyboardEvent`, `CGEventPost`)
-- Latency: Sub-millisecond event dispatching with hardware-accurate timestamp synchronization.
+## Full Documentation
+For complete mathematical models, API endpoints, algorithms, and architecture, see llms-full.txt or README.md.
